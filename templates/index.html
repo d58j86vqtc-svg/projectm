@@ -1,21 +1,201 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>My App</title>
+    <title>Чат</title>
+<link rel="stylesheet" href="{{ url_for('static', filename= 'styles/style.css') }}">
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/main.css') }}"
-    >
+   
 </head>
 
 <body>
 
-    <h1>Hello Flask + Supabase</h1>
+<div class="chat">
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <div class="header">
+        💬 Чат
+    </div>
+
+    <div class="messages" id="messages">
+        <div class="empty">Завантаження повідомлень...</div>
+    </div>
+
+    <form class="form" id="chatForm">
+
+        <input
+            type="text"
+            id="username"
+            placeholder="Ім'я"
+            maxlength="30"
+            required
+        >
+
+        <input
+            type="text"
+            id="message"
+            placeholder="Напиши повідомлення..."
+            maxlength="1000"
+            required
+        >
+
+        <button type="submit">
+            Надіслати
+        </button>
+
+    </form>
+
+</div>
+
+
+<script>
+
+const messagesContainer = document.getElementById("messages");
+const chatForm = document.getElementById("chatForm");
+
+const usernameInput = document.getElementById("username");
+const messageInput = document.getElementById("message");
+
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+function formatTime(date) {
+    return new Date(date).toLocaleTimeString("uk-UA", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+
+function showMessages(messages) {
+
+    if (messages.length === 0) {
+        messagesContainer.innerHTML =
+            '<div class="empty">Повідомлень ще немає. Напиши першим!</div>';
+
+        return;
+    }
+
+    messagesContainer.innerHTML = "";
+
+    messages.forEach(msg => {
+
+        const messageElement = document.createElement("div");
+
+        messageElement.className = "message";
+
+        messageElement.innerHTML = `
+            <div class="username">
+                ${escapeHtml(msg.username)}
+            </div>
+
+            <div class="text">
+                ${escapeHtml(msg.message)}
+                <span class="time">
+                    ${formatTime(msg.created_at)}
+                </span>
+            </div>
+        `;
+
+        messagesContainer.appendChild(messageElement);
+    });
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+
+async function loadMessages() {
+
+    try {
+
+        const response = await fetch("/messages");
+
+        if (!response.ok) {
+            throw new Error("Помилка сервера");
+        }
+
+        const messages = await response.json();
+
+        showMessages(messages);
+
+    } catch (error) {
+
+        console.error(error);
+
+        messagesContainer.innerHTML =
+            '<div class="empty">Не вдалося завантажити повідомлення</div>';
+    }
+}
+
+
+chatForm.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const username = usernameInput.value.trim();
+    const message = messageInput.value.trim();
+
+    if (!username || !message) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/messages", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                username: username,
+                message: message
+            })
+        });
+
+
+        const result = await response.json();
+
+
+        if (!response.ok) {
+
+            alert(result.error || "Помилка");
+
+            return;
+        }
+
+
+        messageInput.value = "";
+
+        await loadMessages();
+
+        messageInput.focus();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Не вдалося відправити повідомлення");
+    }
+
+});
+
+
+loadMessages();
+
+
+setInterval(loadMessages, 2000);
+
+</script>
+
 </body>
 </html>
