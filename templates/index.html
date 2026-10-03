@@ -5,150 +5,459 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Чат</title>
-<link rel="stylesheet" href="{{ url_for('static', filename= 'styles/style.css') }}">
+    <title>Chat</title>
 
-   
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+        }
+
+        .auth {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .box {
+            width: 100%;
+            max-width: 400px;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 18px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 25px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tabs button {
+            flex: 1;
+            padding: 12px;
+            border: 0;
+            border-radius: 8px;
+            background: #334155;
+            color: white;
+            cursor: pointer;
+        }
+
+        .tabs button.active {
+            background: #3b82f6;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 15px;
+            border-radius: 9px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #3b82f6;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 9px;
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .main-btn:hover {
+            background: #2563eb;
+        }
+
+        .error {
+            margin-top: 15px;
+            padding: 12px;
+            background: #7f1d1d;
+            border-radius: 8px;
+            color: #fecaca;
+            display: none;
+        }
+
+        /* CHAT */
+
+        #chat {
+            display: none;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #1e293b;
+            padding: 18px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header h2 {
+            margin: 0;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .username {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .logout {
+            border: none;
+            background: #ef4444;
+            color: white;
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .messages {
+            height: 65vh;
+            overflow-y: auto;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            background: #334155;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message-user {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .message-date {
+            float: right;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .message-text {
+            margin-top: 6px;
+            word-break: break-word;
+        }
+
+        .send {
+            display: flex;
+            gap: 10px;
+        }
+
+        .send input {
+            margin: 0;
+        }
+
+        .send button {
+            border: none;
+            background: #3b82f6;
+            color: white;
+            padding: 0 20px;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                align-items: flex-start;
+            }
+
+            .user {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 7px;
+            }
+
+            .send button {
+                padding: 0 12px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="chat">
+<!-- ================= AUTH ================= -->
 
-    <div class="header">
-        💬 Чат
-    </div>
+<div id="auth" class="auth">
 
-    <div class="messages" id="messages">
-        <div class="empty">Завантаження повідомлень...</div>
-    </div>
+    <div class="box">
 
-    <form class="form" id="chatForm">
+        <h1>💬 Chat</h1>
 
-        <input
-            type="text"
-            id="username"
-            placeholder="Ім'я"
-            maxlength="30"
-            required
+        <div class="description">
+            Спілкуйся з іншими користувачами
+        </div>
+
+        <div class="tabs">
+
+            <button
+                id="loginTab"
+                class="active"
+                onclick="showLogin()"
+            >
+                Вхід
+            </button>
+
+            <button
+                id="registerTab"
+                onclick="showRegister()"
+            >
+                Реєстрація
+            </button>
+
+        </div>
+
+        <!-- LOGIN -->
+
+        <form id="loginForm">
+
+            <input
+                id="loginUsername"
+                type="text"
+                placeholder="Нік"
+                autocomplete="username"
+                required
+            >
+
+            <input
+                id="loginPassword"
+                type="password"
+                placeholder="Пароль"
+                autocomplete="current-password"
+                required
+            >
+
+            <button class="main-btn">
+                Увійти
+            </button>
+
+        </form>
+
+        <!-- REGISTER -->
+
+        <form
+            id="registerForm"
+            style="display: none;"
         >
 
-        <input
-            type="text"
-            id="message"
-            placeholder="Напиши повідомлення..."
-            maxlength="1000"
-            required
-        >
+            <input
+                id="registerUsername"
+                type="text"
+                placeholder="Придумай нік"
+                minlength="3"
+                maxlength="30"
+                required
+            >
 
-        <button type="submit">
-            Надіслати
-        </button>
+            <input
+                id="registerPassword"
+                type="password"
+                placeholder="Придумай пароль"
+                minlength="6"
+                required
+            >
 
-    </form>
+            <button class="main-btn">
+                Зареєструватися
+            </button>
+
+        </form>
+
+        <div id="error" class="error"></div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= CHAT ================= -->
+
+<div id="chat">
+
+    <div class="container">
+
+        <div class="header">
+
+            <h2>💬 Чат</h2>
+
+            <div class="user">
+
+                <span>
+                    <span id="currentUsername"
+                          class="username"></span>
+                </span>
+
+                <button
+                    class="logout"
+                    onclick="logout()"
+                >
+                    Вийти
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div id="messages" class="messages">
+        </div>
+
+
+        <form id="sendForm" class="send">
+
+            <input
+                id="messageInput"
+                type="text"
+                maxlength="1000"
+                placeholder="Напиши повідомлення..."
+                autocomplete="off"
+                required
+            >
+
+            <button>
+                ➤
+            </button>
+
+        </form>
+
+    </div>
 
 </div>
 
 
 <script>
 
-const messagesContainer = document.getElementById("messages");
-const chatForm = document.getElementById("chatForm");
+let token = localStorage.getItem("token");
 
-const usernameInput = document.getElementById("username");
-const messageInput = document.getElementById("message");
+let currentUser = JSON.parse(
+    localStorage.getItem("user") || "null"
+);
 
 
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+// =========================
+// AUTH TABS
+// =========================
+
+function showLogin() {
+
+    document.getElementById("loginForm")
+        .style.display = "block";
+
+    document.getElementById("registerForm")
+        .style.display = "none";
+
+    document.getElementById("loginTab")
+        .classList.add("active");
+
+    document.getElementById("registerTab")
+        .classList.remove("active");
+
+    clearError();
 }
 
 
-function formatTime(date) {
-    return new Date(date).toLocaleTimeString("uk-UA", {
-        hour: "2-digit",
-        minute: "2-digit"
-    });
+function showRegister() {
+
+    document.getElementById("loginForm")
+        .style.display = "none";
+
+    document.getElementById("registerForm")
+        .style.display = "block";
+
+    document.getElementById("loginTab")
+        .classList.remove("active");
+
+    document.getElementById("registerTab")
+        .classList.add("active");
+
+    clearError();
 }
 
 
-function showMessages(messages) {
+function showError(message) {
 
-    if (messages.length === 0) {
-        messagesContainer.innerHTML =
-            '<div class="empty">Повідомлень ще немає. Напиши першим!</div>';
+    const error = document.getElementById("error");
 
-        return;
-    }
-
-    messagesContainer.innerHTML = "";
-
-    messages.forEach(msg => {
-
-        const messageElement = document.createElement("div");
-
-        messageElement.className = "message";
-
-        messageElement.innerHTML = `
-            <div class="username">
-                ${escapeHtml(msg.username)}
-            </div>
-
-            <div class="text">
-                ${escapeHtml(msg.message)}
-                <span class="time">
-                    ${formatTime(msg.created_at)}
-                </span>
-            </div>
-        `;
-
-        messagesContainer.appendChild(messageElement);
-    });
-
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    error.textContent = message;
+    error.style.display = "block";
 }
 
 
-async function loadMessages() {
+function clearError() {
+
+    document.getElementById("error")
+        .style.display = "none";
+}
+
+
+// =========================
+// REGISTER
+// =========================
+
+document.getElementById("registerForm")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    clearError();
+
+    const username =
+        document.getElementById("registerUsername")
+        .value
+        .trim();
+
+    const password =
+        document.getElementById("registerPassword")
+        .value;
 
     try {
 
-        const response = await fetch("/messages");
-
-        if (!response.ok) {
-            throw new Error("Помилка сервера");
-        }
-
-        const messages = await response.json();
-
-        showMessages(messages);
-
-    } catch (error) {
-
-        console.error(error);
-
-        messagesContainer.innerHTML =
-            '<div class="empty">Не вдалося завантажити повідомлення</div>';
-    }
-}
-
-
-chatForm.addEventListener("submit", async function(event) {
-
-    event.preventDefault();
-
-    const username = usernameInput.value.trim();
-    const message = messageInput.value.trim();
-
-    if (!username || !message) {
-        return;
-    }
-
-    try {
-
-        const response = await fetch("/messages", {
+        const response = await fetch("/register", {
 
             method: "POST",
 
@@ -158,44 +467,337 @@ chatForm.addEventListener("submit", async function(event) {
 
             body: JSON.stringify({
                 username: username,
-                message: message
+                password: password
             })
+
         });
 
-
-        const result = await response.json();
-
+        const data = await response.json();
 
         if (!response.ok) {
 
-            alert(result.error || "Помилка");
+            showError(
+                data.error || "Помилка реєстрації"
+            );
 
             return;
         }
 
+        // Зберігаємо авторизацію
 
-        messageInput.value = "";
+        token = data.token;
+        currentUser = data.user;
 
-        await loadMessages();
+        localStorage.setItem(
+            "token",
+            token
+        );
 
-        messageInput.focus();
+        localStorage.setItem(
+            "user",
+            JSON.stringify(currentUser)
+        );
+
+        // ОДРАЗУ В ЧАТ
+
+        openChat();
 
     } catch (error) {
 
         console.error(error);
 
-        alert("Не вдалося відправити повідомлення");
+        showError(
+            "Не вдалося підключитися до сервера"
+        );
     }
 
 });
 
 
-loadMessages();
+// =========================
+// LOGIN
+// =========================
+
+document.getElementById("loginForm")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    clearError();
+
+    const username =
+        document.getElementById("loginUsername")
+        .value
+        .trim();
+
+    const password =
+        document.getElementById("loginPassword")
+        .value;
+
+    try {
+
+        const response = await fetch("/login", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            showError(
+                data.error || "Помилка входу"
+            );
+
+            return;
+        }
+
+        token = data.token;
+        currentUser = data.user;
+
+        localStorage.setItem(
+            "token",
+            token
+        );
+
+        localStorage.setItem(
+            "user",
+            JSON.stringify(currentUser)
+        );
+
+        openChat();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showError(
+            "Не вдалося підключитися до сервера"
+        );
+    }
+
+});
 
 
-setInterval(loadMessages, 2000);
+// =========================
+// OPEN CHAT
+// =========================
+
+function openChat() {
+
+    document.getElementById("auth")
+        .style.display = "none";
+
+    document.getElementById("chat")
+        .style.display = "block";
+
+    document.getElementById("currentUsername")
+        .textContent = currentUser.username;
+
+    loadMessages();
+}
+
+
+// =========================
+// LOAD MESSAGES
+// =========================
+
+async function loadMessages() {
+
+    try {
+
+        const response = await fetch(
+            "/messages",
+            {
+                headers: {
+                    "Authorization":
+                        "Bearer " + token
+                }
+            }
+        );
+
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        const messages = await response.json();
+
+        const box =
+            document.getElementById("messages");
+
+        box.innerHTML = "";
+
+        messages.forEach(message => {
+
+            const div =
+                document.createElement("div");
+
+            div.className = "message";
+
+            const date =
+                new Date(message.created_at)
+                .toLocaleString("uk-UA");
+
+            div.innerHTML = `
+                <div>
+                    <span class="message-user">
+                        ${escapeHtml(message.username)}
+                    </span>
+
+                    <span class="message-date">
+                        ${date}
+                    </span>
+                </div>
+
+                <div class="message-text">
+                    ${escapeHtml(message.message)}
+                </div>
+            `;
+
+            box.appendChild(div);
+
+        });
+
+        box.scrollTop = box.scrollHeight;
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+}
+
+
+// =========================
+// SEND MESSAGE
+// =========================
+
+document.getElementById("sendForm")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const input =
+        document.getElementById("messageInput");
+
+    const message =
+        input.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/messages",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization":
+                        "Bearer " + token
+                },
+
+                body: JSON.stringify({
+                    message: message
+                })
+            }
+        );
+
+        if (response.status === 401) {
+
+            logout();
+
+            return;
+        }
+
+        if (!response.ok) {
+
+            const data = await response.json();
+
+            alert(data.error);
+
+            return;
+        }
+
+        input.value = "";
+
+        loadMessages();
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+});
+
+
+// =========================
+// LOGOUT
+// =========================
+
+function logout() {
+
+    token = null;
+    currentUser = null;
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    document.getElementById("chat")
+        .style.display = "none";
+
+    document.getElementById("auth")
+        .style.display = "flex";
+
+    document.getElementById("loginForm")
+        .reset();
+
+    showLogin();
+}
+
+
+// =========================
+// XSS PROTECTION
+// =========================
+
+function escapeHtml(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
+
+// =========================
+// AUTO LOGIN
+// =========================
+
+if (token && currentUser) {
+    openChat();
+}
 
 </script>
 
 </body>
 </html>
+
