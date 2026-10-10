@@ -1,5 +1,8 @@
+
 import os
 import uuid
+
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, render_template, request
 from dotenv import load_dotenv
@@ -12,62 +15,101 @@ DB_KEY = os.getenv("DB_KEY")
 DB_LINK = os.getenv("DB_LINK")
 
 if not DB_KEY or not DB_LINK:
-    raise RuntimeError("DB_KEY and DB_LINK must be set in .env")
+    raise RuntimeError("DB_KEY та DB_LINK потрібно вказати у .env")
 
 supabase: Client = create_client(DB_LINK, DB_KEY)
 
 app = Flask(__name__)
 
+# Демонстраційні сесії в пам'яті.
+# Після перезапуску сервера користувачі мають увійти повторно.
+sessions = {}
 
-# =========================
-# ГОЛОВНА
-# =========================
+SESSION_LIFETIME = timedelta(days=7)
+
+
+def create_session(user_id):
+    token = str(uuid.uuid4())
+
+    sessions[token] = {
+        "user_id": user_id,
+        "expires_at": datetime.now(timezone.utc) + SESSION_LIFETIME
+    }
+
+    return token
+
+
+def get_current_user():
+    authorization = request.headers.get("Authorization", "")
+
+    if not authorization.startswith("Bearer "):
+        return None
+
+    token = authorization[7:].strip()
+    session = sessions.get(token)
+
+    if not session:
+        return None
+
+    if datetime.now(timezone.utc) >= session["expires_at"]:
+        sessions.pop(token, None)
+        return None
+
+    try:
+        response = (
+            supabase.table("profiles")
+            .select("id, username")
+            .eq("id", session["user_id"])
+            .limit(1)
+            .execute()
+        )
+
+        if not response.data:
+            sessions.pop(token, None)
+            return None
+
+        return response.data[0]
+
+    except Exception as error:
+        app.logger.error("GET USER ERROR: %s", error)
+        raise
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
 
-# =========================
 # РЕЄСТРАЦІЯ
-# =========================
 
 @app.route("/register", methods=["POST"])
 def register():
+    data = request.get_json(silent=True) or {}
+
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Неправильні дані"}), 400
+
+    username = username.strip()
+
+    if not 3 <= len(username) <= 30:
+        return jsonify({
+            "error": "Нік має містити від 3 до 30 символів"
+        }), 400
+
+    if len(password) < 6:
+        return jsonify({
+            "error": "Пароль має містити щонайменше 6 символів"
+        }), 400
 
     try:
-        data = request.get_json()
-
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
-
-        # Перевірка
-        if not username or not password:
-            return jsonify({
-                "error": "Введи нік і пароль"
-            }), 400
-
-        if len(username) < 3:
-            return jsonify({
-                "error": "Нік має містити мінімум 3 символи"
-            }), 400
-
-        if len(username) > 30:
-            return jsonify({
-                "error": "Нік може містити максимум 30 символів"
-            }), 400
-
-        if len(password) < 6:
-            return jsonify({
-                "error": "Пароль має містити мінімум 6 символів"
-            }), 400
-
-        # Перевіряємо, чи існує нік
         existing = (
-            supabase
-            .table("profiles")
+            supabase.table("profiles")
             .select("id")
             .eq("username", username)
+            .limit(1)
             .execute()
         )
 
@@ -76,14 +118,11 @@ def register():
                 "error": "Такий нік уже зайнятий"
             }), 409
 
-        # Створюємо користувача
         user_id = str(uuid.uuid4())
-
         password_hash = generate_password_hash(password)
 
         response = (
-            supabase
-            .table("profiles")
+            supabase.table("profiles")
             .insert({
                 "id": user_id,
                 "username": username,
@@ -98,12 +137,7 @@ def register():
             }), 500
 
         user = response.data[0]
-
-        # Створюємо простий токен сесії
-        token = str(uuid.uuid4())
-
-        # Для простоти зберігаємо токен у пам'яті Flask
-        sessions[token] = user_id
+        token = create_session(user["id"])
 
         return jsonify({
             "message": "Реєстрація успішна",
@@ -114,38 +148,39 @@ def register():
             }
         }), 201
 
-    except Exception as e:
-
-        print("REGISTER ERROR:", e)
+    except Exception:
+        app.logger.exception("REGISTER ERROR")
 
         return jsonify({
             "error": "Помилка під час реєстрації"
         }), 500
 
 
-# =========================
 # ВХІД
-# =========================
 
 @app.route("/login", methods=["POST"])
 def login():
+    data = request.get_json(silent=True) or {}
+
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Неправильні дані"}), 400
+
+    username = username.strip()
+
+    if not username or not password:
+        return jsonify({
+            "error": "Введи нік і пароль"
+        }), 400
 
     try:
-        data = request.get_json()
-
-        username = data.get("username", "").strip()
-        password = data.get("password", "")
-
-        if not username or not password:
-            return jsonify({
-                "error": "Введи нік і пароль"
-            }), 400
-
         response = (
-            supabase
-            .table("profiles")
-            .select("*")
+            supabase.table("profiles")
+            .select("id, username, password_hash")
             .eq("username", username)
+            .limit(1)
             .execute()
         )
 
@@ -156,18 +191,12 @@ def login():
 
         user = response.data[0]
 
-        if not check_password_hash(
-            user["password_hash"],
-            password
-        ):
+        if not check_password_hash(user["password_hash"], password):
             return jsonify({
                 "error": "Неправильний нік або пароль"
             }), 401
 
-        # Створюємо сесію
-        token = str(uuid.uuid4())
-
-        sessions[token] = user["id"]
+        token = create_session(user["id"])
 
         return jsonify({
             "message": "Вхід успішний",
@@ -178,69 +207,65 @@ def login():
             }
         })
 
-    except Exception as e:
-
-        print("LOGIN ERROR:", e)
+    except Exception:
+        app.logger.exception("LOGIN ERROR")
 
         return jsonify({
             "error": "Помилка входу"
         }), 500
 
 
-# =========================
-# ПОВІДОМЛЕННЯ
-# =========================
+# ОТРИМАННЯ ПОВІДОМЛЕНЬ
 
 @app.route("/messages", methods=["GET"])
 def get_messages():
-
-    user = get_current_user()
-
-    if not user:
-        return jsonify({
-            "error": "Необхідна авторизація"
-        }), 401
-
     try:
+        user = get_current_user()
+
+        if not user:
+            return jsonify({
+                "error": "Необхідна авторизація"
+            }), 401
 
         response = (
-            supabase
-            .table("messages")
-            .select("*")
+            supabase.table("messages")
+            .select("id, user_id, username, message, created_at")
             .order("created_at", desc=False)
+            .limit(500)
             .execute()
         )
 
         return jsonify(response.data)
 
-    except Exception as e:
-
-        print("GET MESSAGES ERROR:", e)
+    except Exception:
+        app.logger.exception("GET MESSAGES ERROR")
 
         return jsonify({
             "error": "Не вдалося отримати повідомлення"
         }), 500
 
 
-# =========================
-# ВІДПРАВКА ПОВІДОМЛЕННЯ
-# =========================
+# ВІДПРАВЛЕННЯ ПОВІДОМЛЕННЯ
 
 @app.route("/messages", methods=["POST"])
 def send_message():
-
-    user = get_current_user()
-
-    if not user:
-        return jsonify({
-            "error": "Необхідна авторизація"
-        }), 401
-
     try:
+        user = get_current_user()
 
-        data = request.get_json()
+        if not user:
+            return jsonify({
+                "error": "Необхідна авторизація"
+            }), 401
 
-        message = data.get("message", "").strip()
+        data = request.get_json(silent=True) or {}
+        message = data.get("message", "")
+
+        if not isinstance(message, str):
+            return jsonify({
+                "error": "Повідомлення має бути текстом"
+            }), 400
+
+        message = message.strip()
 
         if not message:
             return jsonify({
@@ -249,12 +274,11 @@ def send_message():
 
         if len(message) > 1000:
             return jsonify({
-                "error": "Повідомлення занадто довге"
+                "error": "Повідомлення не може бути довшим за 1000 символів"
             }), 400
 
         response = (
-            supabase
-            .table("messages")
+            supabase.table("messages")
             .insert({
                 "user_id": user["id"],
                 "username": user["username"],
@@ -263,59 +287,20 @@ def send_message():
             .execute()
         )
 
+        if not response.data:
+            return jsonify({
+                "error": "Не вдалося зберегти повідомлення"
+            }), 500
+
         return jsonify(response.data[0]), 201
 
-    except Exception as e:
-
-        print("SEND MESSAGE ERROR:", e)
+    except Exception:
+        app.logger.exception("SEND MESSAGE ERROR")
 
         return jsonify({
             "error": "Не вдалося відправити повідомлення"
         }), 500
 
-
-# =========================
-# СЕСІЇ
-# =========================
-
-sessions = {}
-
-
-def get_current_user():
-
-    authorization = request.headers.get("Authorization")
-
-    if not authorization:
-        return None
-
-    if not authorization.startswith("Bearer "):
-        return None
-
-    token = authorization.replace("Bearer ", "", 1)
-
-    user_id = sessions.get(token)
-
-    if not user_id:
-        return None
-
-    response = (
-        supabase
-        .table("profiles")
-        .select("id, username")
-        .eq("id", user_id)
-        .single()
-        .execute()
-    )
-
-    if not response.data:
-        return None
-
-    return response.data
-
-
-# =========================
-# ЗАПУСК
-# =========================
 
 if __name__ == "__main__":
     app.run(debug=True)

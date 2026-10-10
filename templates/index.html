@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Chat</title>
+    <title>Мій чат</title>
 
     <style>
         * {
@@ -17,6 +16,19 @@
             font-family: Arial, sans-serif;
             background: #0f172a;
             color: white;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
 
         .auth {
@@ -37,7 +49,7 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 10px;
+            margin: 0 0 10px;
         }
 
         .description {
@@ -59,7 +71,6 @@
             border-radius: 8px;
             background: #334155;
             color: white;
-            cursor: pointer;
         }
 
         .tabs button.active {
@@ -89,7 +100,6 @@
             background: #3b82f6;
             color: white;
             font-weight: bold;
-            cursor: pointer;
         }
 
         .main-btn:hover {
@@ -103,9 +113,8 @@
             border-radius: 8px;
             color: #fecaca;
             display: none;
+            overflow-wrap: anywhere;
         }
-
-        /* CHAT */
 
         #chat {
             display: none;
@@ -124,6 +133,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
             margin-bottom: 15px;
         }
 
@@ -140,6 +150,7 @@
         .username {
             color: #60a5fa;
             font-weight: bold;
+            overflow-wrap: anywhere;
         }
 
         .logout {
@@ -148,11 +159,11 @@
             color: white;
             padding: 9px 14px;
             border-radius: 8px;
-            cursor: pointer;
         }
 
         .messages {
             height: 65vh;
+            min-height: 250px;
             overflow-y: auto;
             background: #1e293b;
             border-radius: 12px;
@@ -165,6 +176,7 @@
             padding: 12px;
             border-radius: 10px;
             margin-bottom: 10px;
+            overflow-wrap: anywhere;
         }
 
         .message-user {
@@ -176,11 +188,12 @@
             float: right;
             color: #94a3b8;
             font-size: 12px;
+            margin-left: 10px;
         }
 
         .message-text {
-            margin-top: 6px;
-            word-break: break-word;
+            margin-top: 8px;
+            white-space: pre-wrap;
         }
 
         .send {
@@ -190,6 +203,7 @@
 
         .send input {
             margin: 0;
+            min-width: 0;
         }
 
         .send button {
@@ -198,10 +212,13 @@
             color: white;
             padding: 0 20px;
             border-radius: 9px;
-            cursor: pointer;
         }
 
         @media (max-width: 600px) {
+            .container {
+                padding: 12px;
+            }
+
             .header {
                 align-items: flex-start;
             }
@@ -212,8 +229,14 @@
                 gap: 7px;
             }
 
+            .message-date {
+                float: none;
+                display: block;
+                margin: 5px 0 0;
+            }
+
             .send button {
-                padding: 0 12px;
+                padding: 0 14px;
             }
         }
     </style>
@@ -221,583 +244,513 @@
 
 <body>
 
-<!-- ================= AUTH ================= -->
+    <div id="auth" class="auth">
+        <div class="box">
+            <h1>💬 Чат</h1>
 
-<div id="auth" class="auth">
-
-    <div class="box">
-
-        <h1>💬 Chat</h1>
-
-        <div class="description">
-            Спілкуйся з іншими користувачами
-        </div>
-
-        <div class="tabs">
-
-            <button
-                id="loginTab"
-                class="active"
-                onclick="showLogin()"
-            >
-                Вхід
-            </button>
-
-            <button
-                id="registerTab"
-                onclick="showRegister()"
-            >
-                Реєстрація
-            </button>
-
-        </div>
-
-        <!-- LOGIN -->
-
-        <form id="loginForm">
-
-            <input
-                id="loginUsername"
-                type="text"
-                placeholder="Нік"
-                autocomplete="username"
-                required
-            >
-
-            <input
-                id="loginPassword"
-                type="password"
-                placeholder="Пароль"
-                autocomplete="current-password"
-                required
-            >
-
-            <button class="main-btn">
-                Увійти
-            </button>
-
-        </form>
-
-        <!-- REGISTER -->
-
-        <form
-            id="registerForm"
-            style="display: none;"
-        >
-
-            <input
-                id="registerUsername"
-                type="text"
-                placeholder="Придумай нік"
-                minlength="3"
-                maxlength="30"
-                required
-            >
-
-            <input
-                id="registerPassword"
-                type="password"
-                placeholder="Придумай пароль"
-                minlength="6"
-                required
-            >
-
-            <button class="main-btn">
-                Зареєструватися
-            </button>
-
-        </form>
-
-        <div id="error" class="error"></div>
-
-    </div>
-
-</div>
-
-
-<!-- ================= CHAT ================= -->
-
-<div id="chat">
-
-    <div class="container">
-
-        <div class="header">
-
-            <h2>💬 Чат</h2>
-
-            <div class="user">
-
-                <span>
-                    <span id="currentUsername"
-                          class="username"></span>
-                </span>
-
-                <button
-                    class="logout"
-                    onclick="logout()"
-                >
-                    Вийти
-                </button>
-
+            <div class="description">
+                Спілкуйся з іншими користувачами
             </div>
 
+            <div class="tabs">
+                <button id="loginTab" class="active" type="button">
+                    Вхід
+                </button>
+
+                <button id="registerTab" type="button">
+                    Реєстрація
+                </button>
+            </div>
+
+            <form id="loginForm">
+                <input
+                    id="loginUsername"
+                    type="text"
+                    placeholder="Нік"
+                    autocomplete="username"
+                    minlength="3"
+                    maxlength="30"
+                    required
+                >
+
+                <input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Пароль"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button class="main-btn" type="submit">
+                    Увійти
+                </button>
+            </form>
+
+            <form id="registerForm" style="display:none">
+                <input
+                    id="registerUsername"
+                    type="text"
+                    placeholder="Придумай нік"
+                    autocomplete="username"
+                    minlength="3"
+                    maxlength="30"
+                    required
+                >
+
+                <input
+                    id="registerPassword"
+                    type="password"
+                    placeholder="Придумай пароль"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+
+                <button class="main-btn" type="submit">
+                    Зареєструватися
+                </button>
+            </form>
+
+            <div id="error" class="error" role="alert"></div>
         </div>
-
-
-        <div id="messages" class="messages">
-        </div>
-
-
-        <form id="sendForm" class="send">
-
-            <input
-                id="messageInput"
-                type="text"
-                maxlength="1000"
-                placeholder="Напиши повідомлення..."
-                autocomplete="off"
-                required
-            >
-
-            <button>
-                ➤
-            </button>
-
-        </form>
-
     </div>
 
-</div>
+    <div id="chat">
+        <div class="container">
+            <div class="header">
+                <h2>💬 Чат</h2>
 
+                <div class="user">
+                    <span id="currentUsername" class="username"></span>
 
-<script>
+                    <button id="logoutButton" class="logout" type="button">
+                        Вийти
+                    </button>
+                </div>
+            </div>
 
-let token = localStorage.getItem("token");
+            <div id="messages" class="messages" aria-live="polite"></div>
 
-let currentUser = JSON.parse(
-    localStorage.getItem("user") || "null"
-);
+            <form id="sendForm" class="send">
+                <input
+                    id="messageInput"
+                    type="text"
+                    maxlength="1000"
+                    placeholder="Напиши повідомлення..."
+                    autocomplete="off"
+                    required
+                >
 
+                <button type="submit" aria-label="Надіслати">
+                    ➤
+                </button>
+            </form>
+        </div>
+    </div>
 
-// =========================
-// AUTH TABS
-// =========================
+    <script>
+        "use strict";
 
-function showLogin() {
+        // СТАН
 
-    document.getElementById("loginForm")
-        .style.display = "block";
+        let token = localStorage.getItem("token");
+        let currentUser = null;
+        let refreshInterval = null;
+        let isSending = false;
+        let isLoadingMessages = false;
+        let lastMessagesSignature = "";
 
-    document.getElementById("registerForm")
-        .style.display = "none";
-
-    document.getElementById("loginTab")
-        .classList.add("active");
-
-    document.getElementById("registerTab")
-        .classList.remove("active");
-
-    clearError();
-}
-
-
-function showRegister() {
-
-    document.getElementById("loginForm")
-        .style.display = "none";
-
-    document.getElementById("registerForm")
-        .style.display = "block";
-
-    document.getElementById("loginTab")
-        .classList.remove("active");
-
-    document.getElementById("registerTab")
-        .classList.add("active");
-
-    clearError();
-}
-
-
-function showError(message) {
-
-    const error = document.getElementById("error");
-
-    error.textContent = message;
-    error.style.display = "block";
-}
-
-
-function clearError() {
-
-    document.getElementById("error")
-        .style.display = "none";
-}
-
-
-// =========================
-// REGISTER
-// =========================
-
-document.getElementById("registerForm")
-.addEventListener("submit", async function(e) {
-
-    e.preventDefault();
-
-    clearError();
-
-    const username =
-        document.getElementById("registerUsername")
-        .value
-        .trim();
-
-    const password =
-        document.getElementById("registerPassword")
-        .value;
-
-    try {
-
-        const response = await fetch("/register", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            showError(
-                data.error || "Помилка реєстрації"
+        try {
+            currentUser = JSON.parse(
+                localStorage.getItem("user") || "null"
             );
-
-            return;
+        } catch {
+            clearSavedSession();
         }
 
-        // Зберігаємо авторизацію
-
-        token = data.token;
-        currentUser = data.user;
-
-        localStorage.setItem(
-            "token",
-            token
-        );
-
-        localStorage.setItem(
-            "user",
-            JSON.stringify(currentUser)
-        );
-
-        // ОДРАЗУ В ЧАТ
-
-        openChat();
-
-    } catch (error) {
-
-        console.error(error);
-
-        showError(
-            "Не вдалося підключитися до сервера"
-        );
-    }
-
-});
-
-
-// =========================
-// LOGIN
-// =========================
-
-document.getElementById("loginForm")
-.addEventListener("submit", async function(e) {
-
-    e.preventDefault();
-
-    clearError();
-
-    const username =
-        document.getElementById("loginUsername")
-        .value
-        .trim();
-
-    const password =
-        document.getElementById("loginPassword")
-        .value;
-
-    try {
-
-        const response = await fetch("/login", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-
-            showError(
-                data.error || "Помилка входу"
-            );
-
-            return;
+        if (
+            !currentUser ||
+            typeof currentUser.username !== "string" ||
+            !token
+        ) {
+            clearSavedSession();
         }
 
-        token = data.token;
-        currentUser = data.user;
+        // DOM
 
-        localStorage.setItem(
-            "token",
-            token
-        );
+        const auth = document.getElementById("auth");
+        const chat = document.getElementById("chat");
 
-        localStorage.setItem(
-            "user",
-            JSON.stringify(currentUser)
-        );
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const sendForm = document.getElementById("sendForm");
 
-        openChat();
+        const loginTab = document.getElementById("loginTab");
+        const registerTab = document.getElementById("registerTab");
 
-    } catch (error) {
+        const errorBox = document.getElementById("error");
+        const usernameLabel = document.getElementById("currentUsername");
+        const messagesBox = document.getElementById("messages");
+        const messageInput = document.getElementById("messageInput");
 
-        console.error(error);
+        // СЕСІЯ
 
-        showError(
-            "Не вдалося підключитися до сервера"
-        );
-    }
+        function clearSavedSession() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            token = null;
+            currentUser = null;
+        }
 
-});
+        function saveSession(data) {
+            if (
+                !data ||
+                typeof data.token !== "string" ||
+                !data.user ||
+                typeof data.user.username !== "string"
+            ) {
+                throw new Error("Сервер повернув неправильні дані");
+            }
 
+            token = data.token;
+            currentUser = data.user;
 
-// =========================
-// OPEN CHAT
-// =========================
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(currentUser));
 
-function openChat() {
+            openChat();
+        }
 
-    document.getElementById("auth")
-        .style.display = "none";
+        // API
 
-    document.getElementById("chat")
-        .style.display = "block";
+        async function api(url, options = {}) {
+            const headers = {
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                ...(token ? {
+                    "Authorization": "Bearer " + token
+                } : {}),
+                ...options.headers
+            };
 
-    document.getElementById("currentUsername")
-        .textContent = currentUser.username;
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
 
-    loadMessages();
-}
+            let data;
 
+            try {
+                data = await response.json();
+            } catch {
+                data = {};
+            }
 
-// =========================
-// LOAD MESSAGES
-// =========================
+            if (!response.ok) {
+                const error = new Error(
+                    data.error || "Помилка сервера: " + response.status
+                );
 
-async function loadMessages() {
+                error.status = response.status;
+                throw error;
+            }
 
-    try {
+            return data;
+        }
 
-        const response = await fetch(
-            "/messages",
-            {
-                headers: {
-                    "Authorization":
-                        "Bearer " + token
+        // ПОВІДОМЛЕННЯ ПРО ПОМИЛКИ
+
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.style.display = "block";
+        }
+
+        function clearError() {
+            errorBox.textContent = "";
+            errorBox.style.display = "none";
+        }
+
+        // ВКЛАДКИ
+
+        function showLogin() {
+            loginForm.style.display = "block";
+            registerForm.style.display = "none";
+
+            loginTab.classList.add("active");
+            registerTab.classList.remove("active");
+
+            clearError();
+        }
+
+        function showRegister() {
+            loginForm.style.display = "none";
+            registerForm.style.display = "block";
+
+            loginTab.classList.remove("active");
+            registerTab.classList.add("active");
+
+            clearError();
+        }
+
+        loginTab.addEventListener("click", showLogin);
+        registerTab.addEventListener("click", showRegister);
+
+        // РЕЄСТРАЦІЯ
+
+        registerForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            clearError();
+
+            const button = registerForm.querySelector("button");
+            button.disabled = true;
+
+            const username = document
+                .getElementById("registerUsername")
+                .value.trim();
+
+            const password = document
+                .getElementById("registerPassword")
+                .value;
+
+            try {
+                const data = await api("/register", {
+                    method: "POST",
+                    body: JSON.stringify({ username, password })
+                });
+
+                saveSession(data);
+                registerForm.reset();
+
+            } catch (error) {
+                console.error("REGISTER ERROR:", error);
+                showError(error.message || "Помилка реєстрації");
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // ВХІД
+
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            clearError();
+
+            const button = loginForm.querySelector("button");
+            button.disabled = true;
+
+            const username = document
+                .getElementById("loginUsername")
+                .value.trim();
+
+            const password = document
+                .getElementById("loginPassword")
+                .value;
+
+            try {
+                const data = await api("/login", {
+                    method: "POST",
+                    body: JSON.stringify({ username, password })
+                });
+
+                saveSession(data);
+                loginForm.reset();
+
+            } catch (error) {
+                console.error("LOGIN ERROR:", error);
+                showError(error.message || "Помилка входу");
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // ВІДКРИТТЯ ЧАТУ
+
+        function openChat() {
+            if (!token || !currentUser) {
+                logout();
+                return;
+            }
+
+            auth.style.display = "none";
+            chat.style.display = "block";
+
+            usernameLabel.textContent = currentUser.username;
+
+            clearError();
+            loadMessages();
+
+            if (refreshInterval !== null) {
+                clearInterval(refreshInterval);
+            }
+
+            refreshInterval = setInterval(() => {
+                if (token) {
+                    loadMessages();
                 }
-            }
-        );
-
-        if (response.status === 401) {
-
-            logout();
-
-            return;
+            }, 3000);
         }
 
-        const messages = await response.json();
+        // ЗАВАНТАЖЕННЯ ПОВІДОМЛЕНЬ
 
-        const box =
-            document.getElementById("messages");
+        async function loadMessages() {
+            if (!token || isLoadingMessages) {
+                return;
+            }
 
-        box.innerHTML = "";
+            isLoadingMessages = true;
 
-        messages.forEach(message => {
+            try {
+                const messages = await api("/messages");
 
-            const div =
-                document.createElement("div");
+                if (!Array.isArray(messages) || !token) {
+                    return;
+                }
 
-            div.className = "message";
+                // Не перемальовуємо чат, якщо нічого не змінилося.
+                const signature = JSON.stringify(messages);
 
-            const date =
-                new Date(message.created_at)
-                .toLocaleString("uk-UA");
+                if (signature === lastMessagesSignature) {
+                    return;
+                }
 
-            div.innerHTML = `
-                <div>
-                    <span class="message-user">
-                        ${escapeHtml(message.username)}
-                    </span>
+                const wasAtBottom =
+                    messagesBox.scrollHeight -
+                    messagesBox.scrollTop -
+                    messagesBox.clientHeight < 80;
 
-                    <span class="message-date">
-                        ${date}
-                    </span>
-                </div>
+                const fragment = document.createDocumentFragment();
 
-                <div class="message-text">
-                    ${escapeHtml(message.message)}
-                </div>
-            `;
+                for (const message of messages) {
+                    const item = document.createElement("div");
+                    item.className = "message";
 
-            box.appendChild(div);
+                    const header = document.createElement("div");
 
+                    const user = document.createElement("span");
+                    user.className = "message-user";
+                    user.textContent = message.username || "Користувач";
+
+                    const date = document.createElement("span");
+                    date.className = "message-date";
+
+                    const parsedDate = new Date(message.created_at);
+
+                    date.textContent = Number.isNaN(parsedDate.getTime())
+                        ? ""
+                        : parsedDate.toLocaleString("uk-UA");
+
+                    header.append(user, date);
+
+                    const text = document.createElement("div");
+                    text.className = "message-text";
+                    text.textContent = message.message || "";
+
+                    item.append(header, text);
+                    fragment.appendChild(item);
+                }
+
+                messagesBox.replaceChildren(fragment);
+                lastMessagesSignature = signature;
+
+                if (wasAtBottom) {
+                    messagesBox.scrollTop = messagesBox.scrollHeight;
+                }
+
+            } catch (error) {
+                if (error.status === 401) {
+                    logout();
+                    return;
+                }
+
+                console.error("LOAD MESSAGES ERROR:", error);
+            } finally {
+                isLoadingMessages = false;
+            }
+        }
+
+        // НАДСИЛАННЯ ПОВІДОМЛЕННЯ
+
+        sendForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            if (isSending || !token) {
+                return;
+            }
+
+            const message = messageInput.value.trim();
+
+            if (!message) {
+                return;
+            }
+
+            isSending = true;
+
+            const button = sendForm.querySelector("button");
+            button.disabled = true;
+
+            try {
+                await api("/messages", {
+                    method: "POST",
+                    body: JSON.stringify({ message })
+                });
+
+                messageInput.value = "";
+                await loadMessages();
+                messageInput.focus();
+
+            } catch (error) {
+                if (error.status === 401) {
+                    logout();
+                    return;
+                }
+
+                console.error("SEND MESSAGE ERROR:", error);
+                alert(error.message || "Не вдалося відправити повідомлення");
+
+            } finally {
+                isSending = false;
+                button.disabled = false;
+            }
         });
 
-        box.scrollTop = box.scrollHeight;
+        // ВИХІД
 
-    } catch (error) {
-
-        console.error(error);
-
-    }
-}
-
-
-// =========================
-// SEND MESSAGE
-// =========================
-
-document.getElementById("sendForm")
-.addEventListener("submit", async function(e) {
-
-    e.preventDefault();
-
-    const input =
-        document.getElementById("messageInput");
-
-    const message =
-        input.value.trim();
-
-    if (!message) {
-        return;
-    }
-
-    try {
-
-        const response = await fetch(
-            "/messages",
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization":
-                        "Bearer " + token
-                },
-
-                body: JSON.stringify({
-                    message: message
-                })
+        function logout() {
+            if (refreshInterval !== null) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
             }
-        );
 
-        if (response.status === 401) {
+            clearSavedSession();
 
-            logout();
+            lastMessagesSignature = "";
+            isLoadingMessages = false;
+            isSending = false;
 
-            return;
+            messagesBox.replaceChildren();
+
+            auth.style.display = "flex";
+            chat.style.display = "none";
+
+            loginForm.reset();
+            registerForm.reset();
+            sendForm.reset();
+
+            showLogin();
         }
 
-        if (!response.ok) {
+        document
+            .getElementById("logoutButton")
+            .addEventListener("click", logout);
 
-            const data = await response.json();
+        // АВТОВХІД
 
-            alert(data.error);
-
-            return;
+        if (token && currentUser) {
+            openChat();
+        } else {
+            showLogin();
         }
-
-        input.value = "";
-
-        loadMessages();
-
-    } catch (error) {
-
-        console.error(error);
-
-    }
-
-});
-
-
-// =========================
-// LOGOUT
-// =========================
-
-function logout() {
-
-    token = null;
-    currentUser = null;
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    document.getElementById("chat")
-        .style.display = "none";
-
-    document.getElementById("auth")
-        .style.display = "flex";
-
-    document.getElementById("loginForm")
-        .reset();
-
-    showLogin();
-}
-
-
-// =========================
-// XSS PROTECTION
-// =========================
-
-function escapeHtml(text) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-}
-
-
-// =========================
-// AUTO LOGIN
-// =========================
-
-if (token && currentUser) {
-    openChat();
-}
-
-</script>
-
+    </script>
 </body>
 </html>
-
